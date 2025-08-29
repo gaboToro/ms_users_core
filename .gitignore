@@ -1,0 +1,23 @@
+# Maven files
+/target/
+/pom.xml.tag
+/pom.xml.versions
+/pom.xml.releaseBackup
+/release.properties
+/dependency-reduced-pom.xml
+
+# Java files
+*.class
+
+# IntelliJ IDEA files
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# temporary files and logs
+*.log
+logs/
+*.tmp
+
+src/main/resources/application.properties
