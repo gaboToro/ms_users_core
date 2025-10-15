@@ -1,9 +1,6 @@
 package com.bullstra.logistic.users.controller;
 
-import com.bullstra.logistic.users.dto.LoginDTO;
-import com.bullstra.logistic.users.dto.UserRegistrationDTO;
-import com.bullstra.logistic.users.dto.UserResponseDTO;
-import com.bullstra.logistic.users.model.User;
+import com.bullstra.logistic.users.dto.*;
 import com.bullstra.logistic.users.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -20,37 +17,37 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    // Internal endpoint for Auth Service to get authentication data
+    @GetMapping("/internal/auth-data")
+    public ResponseEntity<?> getAuthData(@RequestParam String email) {
+        Optional<UserAuthDataDTO> authData = userService.getAuthDataByEmail(email);
+        if (authData.isPresent()) {
+            return ResponseEntity.ok(authData.get());
+        } else {
+            // Return 404 without revealing user existence
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    // Register new user
     @PostMapping("/register")
-    public ResponseEntity<?> registerUser (@RequestBody UserRegistrationDTO registrationDTO) {
+    public ResponseEntity<?> registerUser(@RequestBody UserRegistrationDTO registrationDTO) {
         try {
-            UserResponseDTO user = userService.registerUser (registrationDTO);
+            UserResponseDTO user = userService.registerUser(registrationDTO);
             return new ResponseEntity<>(user, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> loginUser(@RequestBody LoginDTO loginDTO) {
-        Optional<User> user = userService.authenticateUser(loginDTO.getEmail(), loginDTO.getPassword());
-        if (user.isPresent()) {
-            // TODO: Delegar la generación de JWT al microservicio de autenticación.
-            // Ejemplo:
-            // String jwtToken = authService.generateToken(user.get().getId(), user.get().getRol().getRolName());
-            // return ResponseEntity.ok(jwtToken);
-            return ResponseEntity.ok("Login successful. JWT token placeholder.");
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
-        }
-    }
-
+    // Update user data by ID
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser (@PathVariable UUID id,
-                                         @RequestBody UserRegistrationDTO updateDTO,
-                                         @RequestParam String requesterEmail) {
+    public ResponseEntity<?> updateUser(@PathVariable UUID id,
+                                        @RequestBody UserRegistrationDTO updateDTO,
+                                        @RequestParam String requesterEmail) {
         try {
-            UserResponseDTO updatedUser  = userService.updateUser (id, updateDTO, requesterEmail);
-            return ResponseEntity.ok(updatedUser );
+            UserResponseDTO updatedUser = userService.updateUser(id, updateDTO, requesterEmail);
+            return ResponseEntity.ok(updatedUser);
         } catch (IllegalAccessException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
         } catch (IllegalArgumentException e) {
@@ -58,11 +55,12 @@ public class UserController {
         }
     }
 
+    // Delete user by ID
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteUser (@PathVariable UUID id,
-                                         @RequestParam String requesterEmail) {
+    public ResponseEntity<?> deleteUser(@PathVariable UUID id,
+                                        @RequestParam String requesterEmail) {
         try {
-            userService.deleteUser (id, requesterEmail);
+            userService.deleteUser(id, requesterEmail);
             return ResponseEntity.noContent().build();
         } catch (IllegalAccessException e) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -71,9 +69,10 @@ public class UserController {
         }
     }
 
+    // Create user with role (admin only)
     @PostMapping("/admin/create")
     public ResponseEntity<?> createUserByAdmin(@RequestBody UserRegistrationDTO registrationDTO,
-                                                @RequestParam String requesterEmail) {
+                                               @RequestParam String requesterEmail) {
         try {
             UserResponseDTO user = userService.registerUserWithRole(registrationDTO, requesterEmail);
             return new ResponseEntity<>(user, HttpStatus.CREATED);
@@ -81,4 +80,16 @@ public class UserController {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
     }
+
+    // Get user by ID
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getUserById(@PathVariable UUID id) {
+        Optional<UserResponseDTO> user = userService.getUserById(id);
+        if (user.isPresent()) {
+            return ResponseEntity.ok(user.get());
+        } else {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
 }
